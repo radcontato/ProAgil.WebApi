@@ -2,8 +2,10 @@ import { Component, OnInit, TemplateRef } from '@angular/core';
 import { EventoService } from '../_services/evento.service';
 import { Evento } from '../_models/Evento';
 import { BsModalRef, BsModalService } from 'ngx-bootstrap';
-import { FormGroup, FormControl, Validators } from '@angular/forms';
+import { FormGroup, Validators, FormBuilder } from '@angular/forms';
+import { defineLocale, BsLocaleService, ptBrLocale } from 'ngx-bootstrap';
 
+defineLocale('pt-br', ptBrLocale);
 @Component({
   selector: 'app-eventos',
   templateUrl: './eventos.component.html',
@@ -12,18 +14,23 @@ import { FormGroup, FormControl, Validators } from '@angular/forms';
 export class EventosComponent implements OnInit {
   eventosFiltrados: Evento[];
   eventos: Evento[];
+  evento: Evento;
   imagemLargura = 50;
   imagemMargem = 2;
   mostrarImagem = false;
-  modalRef: BsModalRef;
   registerForm: FormGroup;
 
   // tslint:disable-next-line:variable-name
   _filtroLista = '';
 
-  constructor(private eventoService: EventoService,
-              private modalService: BsModalService
-    ) { }
+  constructor(
+    private eventoService: EventoService,
+    private modalService: BsModalService,
+    private formBuilder: FormBuilder,
+    private localeService: BsLocaleService
+  ) {
+    this.localeService.use('pt-br');
+  }
 
   get filtroLista(): string {
     return this._filtroLista;
@@ -35,11 +42,13 @@ export class EventosComponent implements OnInit {
       : this.eventos;
   }
 
-  openModal(template: TemplateRef<any>) {
-    this.modalRef = this.modalService.show(template);
+  openModal(template: any) {
+    this.registerForm.reset();
+    template.show();
   }
 
   ngOnInit() {
+    this.validation();
     this.getEventos();
   }
 
@@ -53,28 +62,38 @@ export class EventosComponent implements OnInit {
     this.mostrarImagem = !this.mostrarImagem;
   }
 
-  validation(){
-    this.registerForm = new FormGroup({
-
-    tema: new FormControl('', [Validators.required, Validators.minLength(4), Validators.maxLength(50)]),
-    local: new FormControl('', Validators.required),
-    data: new FormControl('', Validators.required),
-    imagemURL: new FormControl('', Validators.required),
-    qtdPessoas: new FormControl('', [Validators.required, Validators.max(120000)]),
-    telefone: new FormControl('', Validators.required),
-    email: new FormControl('', [Validators.required, Validators.email])
+  validation() {
+    this.registerForm = this.formBuilder.group({
+      tema: [null, [Validators.required, Validators.minLength(4), Validators.maxLength(50)]],
+      local: [null, Validators.required],
+      data: [null, Validators.required],
+      imagemURL: [null, Validators.required],
+      qtdPessoas: [null, [Validators.required, Validators.max(120000)]],
+      telefone: [null, Validators.required],
+      email: [null, [Validators.required, Validators.email]]
     });
   }
 
-  salvarAlteracao(){
-
+  salvarAlteracao(template: any) {
+    if (this.registerForm.valid) {
+      this.evento = Object.assign({}, this.registerForm.value);
+      this.eventoService.postEvento(this.evento).subscribe(
+        (novoEvento: Evento) => {
+          console.log(novoEvento);
+          template.hide();
+          this.getEventos();
+        }, error => {
+          console.log(error);
+        }
+      )
+    }
   }
 
   getEventos() {
 
     this.eventoService.getAllEvento().subscribe(
-        // tslint:disable-next-line:variable-name
-        (_eventos: Evento[]) => {
+      // tslint:disable-next-line:variable-name
+      (_eventos: Evento[]) => {
         this.eventos = _eventos;
         this.eventosFiltrados = this.eventos;
       },

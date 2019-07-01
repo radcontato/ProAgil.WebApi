@@ -1,8 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TypeScriptToolsVersion>3.4</TypeScriptToolsVersion>
   </PropertyGroup>
   <ItemGroup>
+    <Folder Include="ProAgil.App\" />
     <Folder Include="wwwroot\" />
   </ItemGroup>
   <ItemGroup>
